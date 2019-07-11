@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/orbs-network/orbs-contract-sdk/go/testing/unit"
@@ -52,7 +53,14 @@ func TestRegisterAndSearch(t *testing.T) {
 			fmt.Println(s)
 		}
 
-		s = search(key, 75)
+		s = register("aaa", strings.Replace(meta, "9d5cdf280cdc400bacf0eeca7bbb6e51", "9d5cdf280cdc400bacf0eeca7bbb6xyz", 1))
+		if s == "" {
+			t.Error("Failed to create hash array")
+		} else {
+			fmt.Println(s)
+		}
+
+		s = search(key, 25)
 		fmt.Println(s)
 	})
 }
