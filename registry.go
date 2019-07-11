@@ -2,9 +2,7 @@ package main
 
 import (
 	"bytes"
-	"crypto/md5"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -21,7 +19,6 @@ var SYSTEM = sdk.Export(_init)
 var dataKey = []byte("HASH_KEYS")
 
 type searchHit struct {
-	Hash   string                 `json:"hash"`
 	Score  float64                `json:"score"`
 	Source map[string]interface{} `json:"source"`
 }
@@ -29,63 +26,45 @@ type searchHit struct {
 func _init() {
 }
 
-func register(phash string, meta string) string {
+func register(phash string, meta string) {
 	//step 1: verify if meta is valid JSON
 	var data map[string]interface{}
 	err := json.Unmarshal([]byte(meta), &data)
 	if err != nil {
-		panic(fmt.Sprintf("Invalid JSON: %s", meta))
+		panic("Invalid JSON: " + meta)
 	}
 
 	//step 2: convert meta JSON to a string
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		panic(fmt.Sprintf("JSON stringify error: %s", meta))
+		panic("JSON stringify error: " + meta)
 	}
 
-	//step 3: calculate real hash
-	hash := fmt.Sprintf("%x", md5.Sum(bytes))
-
-	//step 4: check for uniqueness
+	//step 3: check for uniqueness
 	key := []byte(phash)
-	hs := state.ReadString(key)
-	if hs != "" {
-		keys := strings.Split(hs, ",")
-		for _, k := range keys {
-			if k == hash {
-				panic(fmt.Sprintf("%s already exists in %s", k, phash))
-			}
-		}
-
-		keys = append(keys, hash)
-		hs = strings.Join(keys, ",")
-	} else {
-		hs = hash
+	test := state.ReadString(key)
+	if test != "" {
+		panic(phash + " already exists")
 	}
 
-	//step 5: save phash
-	state.WriteString(key, hs)
+	//step 4: save phash
+	state.WriteBytes(key, bytes)
 
-	//step 6: save hash
-	state.WriteBytes([]byte(hash), bytes)
-
-	//step 7: modify phash collection
+	//step 5: modify phash collection
 	s := state.ReadString(dataKey)
 	if s == "" {
 		s = phash
 	} else {
-		s = fmt.Sprintf("%s,%s", s, phash)
+		s = s + "," + phash
 	}
 	state.WriteString(dataKey, s)
-
-	return hs
 }
 
 func verify(phash string) string {
 	key := []byte(phash)
 	s := state.ReadString(key)
 	if s == "" {
-		panic(fmt.Sprintf("%s does not exists", phash))
+		panic(phash + " does not exists")
 	}
 	return s
 }
@@ -119,21 +98,16 @@ func search(phash string, minScore uint64) string {
 	}
 
 	for k, v := range keys {
-		hs := state.ReadString([]byte(k))
-		if hs != "" {
-			hashes := strings.Split(hs, ",")
-			for _, hash := range hashes {
-				meta := state.ReadString([]byte(hash))
-				var jo map[string]interface{}
-				err := json.Unmarshal([]byte(meta), &jo)
-				if err == nil {
-					hit := searchHit{
-						Hash:   hash,
-						Score:  v,
-						Source: jo,
-					}
-					hits = append(hits, hit)
+		meta := state.ReadString([]byte(k))
+		if meta != "" {
+			var jo map[string]interface{}
+			err := json.Unmarshal([]byte(meta), &jo)
+			if err == nil {
+				hit := searchHit{
+					Score:  v,
+					Source: jo,
 				}
+				hits = append(hits, hit)
 			}
 		}
 	}

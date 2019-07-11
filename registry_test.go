@@ -46,21 +46,11 @@ func TestVerify(t *testing.T) {
 
 func TestRegisterAndSearch(t *testing.T) {
 	InServiceScope(nil, nil, func(m Mockery) {
-		s := register(key, meta)
-		if s == "" {
-			t.Error("Failed to create hash array")
-		} else {
-			fmt.Println(s)
-		}
+		register(key, meta)
 
-		s = register("aaa", strings.Replace(meta, "9d5cdf280cdc400bacf0eeca7bbb6e51", "9d5cdf280cdc400bacf0eeca7bbb6xyz", 1))
-		if s == "" {
-			t.Error("Failed to create hash array")
-		} else {
-			fmt.Println(s)
-		}
+		register("aaa", strings.Replace(meta, "9d5cdf280cdc400bacf0eeca7bbb6e51", "9d5cdf280cdc400bacf0eeca7bbb6xyz", 1))
 
-		s = search(key, 25)
+		s := search(key, 25)
 		fmt.Println(s)
 	})
 }
