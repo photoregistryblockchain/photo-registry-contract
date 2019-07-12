@@ -1,5 +1,8 @@
-# registry-contract
-Smart Contract for Photo Registry
+# Photo Registry Contract
+
+An Orbs smart contract managing a photo registry over the blockchain.
+
+Supports the following public API:
 
 ### Registration
 Registers a photo with metadata
